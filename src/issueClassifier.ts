@@ -13,7 +13,7 @@ export function classifyIssue(config: OrchestratorConfig): ClassificationResult 
   );
 
   // Find first existing track label
-  const existingTrackLabel = labels.find((l) => typeof l === "string" && l.startsWith("track/"));
+  const existingTrackLabel = labels.find((l:string) => typeof l === "string" && l.startsWith("track/"));
 
   if (existingTrackLabel) {
     const trackId = existingTrackLabel.replace("track/", "");

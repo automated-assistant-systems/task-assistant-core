@@ -17,7 +17,7 @@ export async function ensureMilestone(
     state: "open"
   });
 
-  const existing = milestones.data.find((m) => m.title === desiredTitle);
+  const existing = milestones.data.find((m:any) => m.title === desiredTitle);
   if (existing) {
     return existing.number;
   }
