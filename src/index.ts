@@ -1,98 +1,128 @@
-import * as core from "@actions/core";
-import * as github from "@actions/github";
+// src/index.ts
 
+import * as core from "@actions/core";
+import * as gha from "@actions/github";
+
+import { env } from "./env";
+import { logger } from "./logger";
 import { loadConfig } from "./config";
-import { createOctokit } from "./githubClient";
 import { classifyIssue } from "./issueClassifier";
 import { inferMilestoneTitle } from "./milestoneRules";
 import { ensureMilestone, attachMilestoneToIssue } from "./milestoneManager";
 import { writeTelemetry } from "./telemetry";
-import { TelemetryPayload } from "./types";
+import { OrchestratorResult, TelemetryPayload } from "./types";
+import { github as ghClient } from "./githubClient";
 
 async function run() {
   try {
-    core.info("🚀 Orchestrator Core starting");
+    logger.info("🚀 Orchestrator-core starting...");
+    logger.debug(`Run mode: ${env.ORCHESTRATOR_RUN_MODE}`);
 
-    const configPath = core.getInput("config-path") || ".github/orchestrator.yml";
+    const configPath =
+      core.getInput("config-path") || ".github/orchestrator.yml";
     const config = loadConfig(configPath);
 
-    const ctx = github.context;
-    const issue = ctx.payload.issue;
+    const ctx = gha.context;
+    const issue = ctx.payload.issue as any;
 
     if (!issue) {
-      throw new Error("This action must be triggered by an issue event.");
+      core.info(
+        "No issue in event payload. This action should be triggered by an issue event."
+      );
+      return;
     }
 
     const { owner, repo } = ctx.repo;
-    const octokit = createOctokit();
+    logger.info(`🔍 Processing issue #${issue.number} in ${owner}/${repo}`);
 
-    core.info(`🔍 Processing issue #${issue.number} in ${owner}/${repo}`);
+    const labels: string[] = (issue.labels || []).map((l: any) =>
+      typeof l === "string" ? l : l.name
+    );
 
     // 1. Classify issue track
-    const classification = classifyIssue(config);
-    core.info(`Track: ${classification.track ?? "none"}`);
+    const classification = classifyIssue(config, labels);
+    logger.info(`Track: ${classification.track ?? "none"}`);
+
     if (classification.violations.length > 0) {
-      core.info(`Violations: ${classification.violations.join(", ")}`);
+      logger.warn(
+        `Violations: ${classification.violations.join(", ")}`
+      );
     }
 
-    // 2. Self-healing: apply track label if missing
-    const selfHealingEnabled = config.self_healing?.enabled ?? false;
-    const fixMissingTrack = config.self_healing?.fix_missing_track ?? false;
+    // 2. Self-healing behavior
+    const selfHealing = config.selfHealing ?? {
+      enabled: false,
+      fixMissingTrack: false,
+      fixMissingMilestone: false,
+    };
 
+    // 2a. Fix missing track label, if configured
     if (
-      selfHealingEnabled &&
-      fixMissingTrack &&
+      selfHealing.enabled &&
+      selfHealing.fixMissingTrack &&
       classification.trackLabelToApply
     ) {
-      core.info(`Applying missing track label: ${classification.trackLabelToApply}`);
-      await octokit.issues.addLabels({
-        owner,
-        repo,
-        issue_number: issue.number,
-        labels: [classification.trackLabelToApply]
-      });
+      logger.info(
+        `Applying missing track label: ${classification.trackLabelToApply}`
+      );
+      await ghClient.addLabels(owner, repo, issue.number, [
+        classification.trackLabelToApply,
+      ]);
+      classification.actions.push(
+        `apply-track-label:${classification.trackLabelToApply}`
+      );
     }
 
-    // 3. Milestone enforcement
-    const fixMissingMilestone = config.self_healing?.fix_missing_milestone ?? false;
-    let finalMilestoneTitle: string | null = null;
+    // 2b. Milestone enforcement
+    let finalMilestoneTitle: string | null =
+      issue.milestone?.title ?? null;
 
-    if (selfHealingEnabled && fixMissingMilestone) {
-      const currentMilestoneTitle = issue.milestone?.title ?? null;
-      const desiredMilestoneTitle = inferMilestoneTitle(config, classification.track);
-
-      if (desiredMilestoneTitle && currentMilestoneTitle !== desiredMilestoneTitle) {
-        core.info(`Desired milestone: ${desiredMilestoneTitle}`);
-
-        const milestoneNumber = await ensureMilestone(octokit, { owner, repo }, desiredMilestoneTitle);
-        await attachMilestoneToIssue(octokit, { owner, repo }, issue.number, milestoneNumber);
-
-        finalMilestoneTitle = desiredMilestoneTitle;
-        classification.actions.push(`set-milestone:${desiredMilestoneTitle}`);
-      } else {
-        finalMilestoneTitle = currentMilestoneTitle;
-      }
-    } else {
-      finalMilestoneTitle = issue.milestone?.title ?? null;
-    }
-
-    // 4. Telemetry
-    const telemetryEnabled = config.telemetry?.enabled ?? true;
-    let telemetryPathUsed: string | null = null;
-
-    if (telemetryEnabled) {
-      const basePath = config.telemetry?.path ?? "telemetry";
-
-      const labels = (issue.labels || []).map((l: any) =>
-        typeof l === "string" ? l : l.name
+    if (selfHealing.enabled && selfHealing.fixMissingMilestone) {
+      const desiredMilestoneTitle = inferMilestoneTitle(
+        config,
+        classification.track
       );
 
+      if (
+        desiredMilestoneTitle &&
+        desiredMilestoneTitle !== finalMilestoneTitle
+      ) {
+        logger.info(
+          `Ensuring milestone '${desiredMilestoneTitle}' exists and is attached.`
+        );
+
+        const milestoneNumber = await ensureMilestone(
+          { owner, repo },
+          desiredMilestoneTitle
+        );
+        await attachMilestoneToIssue(
+          { owner, repo },
+          issue.number,
+          milestoneNumber
+        );
+
+        finalMilestoneTitle = desiredMilestoneTitle;
+        classification.actions.push(
+          `set-milestone:${desiredMilestoneTitle}`
+        );
+      }
+    }
+
+    // 3. Telemetry
+    const telemetryEnabled =
+      (config.telemetry?.enabled ?? true) &&
+      env.ORCHESTRATOR_TELEMETRY_ENABLED;
+
+    let telemetryFile: string | null = null;
+
+    if (telemetryEnabled) {
       const payload: TelemetryPayload = {
         version: 1,
         event: "issue_event",
+        generated_at: new Date().toISOString(),
         repository: {
           owner,
-          repo
+          repo,
         },
         issue: {
           id: issue.id,
@@ -102,28 +132,44 @@ async function run() {
           labels,
           milestone: finalMilestoneTitle,
           created_at: issue.created_at,
-          updated_at: issue.updated_at
+          updated_at: issue.updated_at,
         },
         classification,
-        generated_at: new Date().toISOString()
+        actions: classification.actions,
       };
 
-      const telemetryFile = writeTelemetry(basePath, issue.number, payload);
-      telemetryPathUsed = telemetryFile;
-      core.info(`📦 Telemetry written to ${telemetryFile}`);
+      const writtenPath = writeTelemetry(issue.number, payload);
+      telemetryFile = writtenPath || null;
+
+      if (telemetryFile) {
+        logger.info(`📦 Telemetry written to ${telemetryFile}`);
+      } else {
+        logger.warn("Telemetry was enabled but no file was written.");
+      }
+    } else {
+      logger.info("Telemetry disabled by configuration or environment.");
     }
 
-    const resultSummary = {
+    // 4. Summarize result for downstream workflows
+    const result: OrchestratorResult = {
       track: classification.track,
       actions: classification.actions,
       milestone: finalMilestoneTitle,
-      telemetryFile: telemetryPathUsed
+      telemetryFile,
     };
 
-    core.setOutput("result", JSON.stringify(resultSummary));
-    core.info("✅ Orchestrator Core completed successfully");
+    core.setOutput("result", JSON.stringify(result));
+    core.info("✅ Orchestrator-core completed successfully.");
   } catch (err: any) {
-    core.setFailed(`❌ Orchestrator error: ${err.message}`);
+    logger.error(err);
+
+    if (err instanceof Error) {
+      core.setFailed(`❌ Orchestrator error: ${err.message}`);
+    } else {
+      core.setFailed("❌ Orchestrator error: unknown error");
+    }
+
+    process.exitCode = 1;
   }
 }
 

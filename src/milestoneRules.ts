@@ -1,20 +1,45 @@
-import { OrchestratorConfig } from "./types";
-
 /**
- * Simple milestone inference:
- * - If track is "sprint" and a sprint_pattern exists, fill it with "1.0" by default.
- * - You can later update this to consult repo milestones to find the active sprint.
+ * milestoneRules.ts
+ * Track → Milestone logic for orchestrator-core.
+ *
+ * Given a track name (from issueClassifier) and orchestrator config,
+ * this module determines which milestone title should be used.
  */
+
+import { logger } from "./logger";
+
+export interface MilestoneRule {
+  title: string;
+}
+
+export interface OrchestratorConfig {
+  tracks?: Record<string, string[]>;
+  milestones?: Record<string, MilestoneRule>;
+}
+
 export function inferMilestoneTitle(
   config: OrchestratorConfig,
   track: string | null
 ): string | null {
-  if (!track) return null;
-
-  if (track === "sprint" && config.milestones?.sprint_pattern) {
-    const pattern = config.milestones.sprint_pattern;
-    return pattern.replace("{major}", "1").replace("{minor}", "0");
+  if (!track) {
+    logger.debug("No track found → cannot infer milestone.");
+    return null;
   }
 
-  return null;
+  const milestoneRules = config.milestones ?? {};
+
+  // Look up matching milestone rule
+  const rule = milestoneRules[track];
+
+  if (!rule) {
+    logger.debug(`No milestone rule found for track '${track}'.`);
+    return null;
+  }
+
+  // Future extensibility: dynamic templates, sprint numbers, etc.
+  logger.debug(
+    `Milestone for track '${track}' → title '${rule.title}'`
+  );
+
+  return rule.title;
 }

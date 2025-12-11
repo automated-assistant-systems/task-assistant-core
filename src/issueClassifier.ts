@@ -1,40 +1,55 @@
-import * as github from "@actions/github";
-import { ClassificationResult, OrchestratorConfig } from "./types";
+// src/issueClassifier.ts
+//
+// Track classification engine using pattern matching against issue labels.
+// Tracks come from config.tracks: Record<string, string[]>
 
-export function classifyIssue(config: OrchestratorConfig): ClassificationResult {
-  const issue = github.context.payload.issue;
+import { logger } from "./logger";
+import { IssueClassification } from "./types";
 
-  if (!issue) {
-    throw new Error("No issue found in GitHub context payload.");
-  }
+export interface OrchestratorConfig {
+  tracks?: Record<string, string[]>;
+}
 
-  const labels = (issue.labels || []).map((l: any) =>
-    typeof l === "string" ? l : l.name
-  );
-
-  // Find first existing track label
-  const existingTrackLabel = labels.find((l:string) => typeof l === "string" && l.startsWith("track/"));
-
-  if (existingTrackLabel) {
-    const trackId = existingTrackLabel.replace("track/", "");
-    return {
-      track: trackId,
-      trackLabelToApply: null,
-      violations: [],
-      actions: []
-    };
-  }
-
-  // No existing track: pick default (prefer id === "sprint", otherwise first track)
-  const sprintTrack = config.tracks.find((t) => t.id === "sprint");
-  const defaultTrack = sprintTrack ?? config.tracks[0];
-
-  const trackLabelToApply = `track/${defaultTrack.id}`;
-
-  return {
-    track: defaultTrack.id,
-    trackLabelToApply,
-    violations: ["missing-track"],
-    actions: [`apply-label:${trackLabelToApply}`]
+/**
+ * Classify an issue's track based on label patterns.
+ */
+export function classifyIssue(
+  config: OrchestratorConfig,
+  labels: string[]
+): IssueClassification {
+  const classification: IssueClassification = {
+    track: null,
+    trackLabelToApply: null,
+    violations: [],
+    actions: [],
   };
+
+  const tracks = config.tracks ?? {};
+
+  let detectedTrack: string | null = null;
+
+  const normalizedLabels = labels.map(l => l.toLowerCase());
+
+  // Iterate over configured tracks
+  for (const [trackName, patterns] of Object.entries(tracks)) {
+    const match = patterns.some(pattern =>
+      normalizedLabels.some(label =>
+        label.includes(pattern.toLowerCase())
+      )
+    );
+
+    if (match) {
+      detectedTrack = trackName;
+      break;
+    }
+  }
+
+  if (detectedTrack) {
+    classification.track = detectedTrack;
+    classification.trackLabelToApply = `track:${detectedTrack}`;
+  } else {
+    classification.violations.push("no-track-matched");
+  }
+
+  return classification;
 }

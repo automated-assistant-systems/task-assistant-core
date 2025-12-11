@@ -1,19 +1,11 @@
-import { OrchestratorConfig } from "./types";
+export function isStale(issue: any, config: any): boolean {
+  const daysBeforeStale = config?.stale?.days ?? 30;
 
-export function isStale(
-  config: OrchestratorConfig,
-  lastUpdated: string,
-  labels: string[]
-): boolean {
-  if (!config.stale?.enabled) return false;
+  if (!issue.updated_at) return false;
 
-  const exclude = config.stale.exclude_labels;
-  if (labels.some((l) => exclude.includes(l))) return false;
-
-  const last = new Date(lastUpdated).getTime();
+  const updated = new Date(issue.updated_at).getTime();
   const now = Date.now();
+  const diffDays = (now - updated) / (1000 * 60 * 60 * 24);
 
-  const ageDays = (now - last) / (1000 * 60 * 60 * 24);
-
-  return ageDays >= config.stale.days_until_stale;
+  return diffDays >= daysBeforeStale;
 }
