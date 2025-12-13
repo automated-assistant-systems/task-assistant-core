@@ -181,7 +181,11 @@ async function run() {
   }
 }
 
-run();
+const env = getEnv();
+
+if (env.ORCHESTRATOR_RUN_MODE === "action") {
+  run();
+}
 
 export interface RunCoreInput {
   owner: string;
