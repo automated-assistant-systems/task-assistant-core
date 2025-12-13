@@ -17,7 +17,8 @@ import fs from "fs";
 import path from "path";
 
 import { logger } from "./logger";
-import { env } from "./env";
+import { getEnv } from "./env";
+const env = getEnv();
 import { TelemetryPayload } from "./types";  // ⬅ NEW
 
 /**

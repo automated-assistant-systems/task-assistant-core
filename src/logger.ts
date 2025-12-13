@@ -7,7 +7,8 @@
  */
 
 import { OrchestratorError } from "./errors";
-import { env } from "./env";
+import { getEnv } from "./env";
+const env = getEnv();
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 

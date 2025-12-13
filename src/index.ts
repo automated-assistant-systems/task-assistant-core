@@ -3,7 +3,8 @@
 import * as core from "@actions/core";
 import * as gha from "@actions/github";
 import { Octokit } from "@octokit/rest";
-import { env } from "./env";
+import { getEnv } from "./env";
+const env = getEnv();
 import { logger } from "./logger";
 import { loadConfig } from "./config";
 import { classifyIssue } from "./issueClassifier";

@@ -127,5 +127,15 @@ export function loadEnv(): OrchestratorEnv {
   };
 }
 
-// Default export for convenience
-export const env = loadEnv();
+let cachedEnv: OrchestratorEnv | null = null;
+
+/**
+ * Lazily loads and validates environment variables.
+ * Safe to call only in Action-mode execution paths.
+ */
+export function getEnv(): OrchestratorEnv {
+  if (!cachedEnv) {
+    cachedEnv = loadEnv();
+  }
+  return cachedEnv;
+}

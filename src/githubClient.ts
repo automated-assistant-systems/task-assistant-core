@@ -7,7 +7,8 @@
  */
 
 import { Octokit } from "@octokit/rest";
-import { env } from "./env";
+import { getEnv } from "./env";
+const env = getEnv();
 import { logger } from "./logger";
 import {
   githubApiError,
