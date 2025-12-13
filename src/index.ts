@@ -2,7 +2,7 @@
 
 import * as core from "@actions/core";
 import * as gha from "@actions/github";
-
+import type { Octokit } from "@octokit/rest";
 import { env } from "./env";
 import { logger } from "./logger";
 import { loadConfig } from "./config";
@@ -174,3 +174,72 @@ async function run() {
 }
 
 run();
+
+export interface RunCoreInput {
+  octokit: Octokit;
+  owner: string;
+  repo: string;
+  issue: any;
+}
+
+export async function runCore(input: RunCoreInput) {
+  const { octokit, owner, repo, issue } = input;
+
+  const config = loadConfig(".github/orchestrator.yml");
+
+  const labels = (issue.labels || []).map((l: any) =>
+    typeof l === "string" ? l : l.name
+  );
+  const repoRef = { owner, repo };
+  const classification = classifyIssue(config, labels);
+
+  // Self-healing: labels
+  if (classification.trackLabelToApply) {
+    await octokit.issues.addLabels({
+      owner,
+      repo,
+      issue_number: issue.number,
+      labels: [classification.trackLabelToApply]
+    });
+  }
+
+  // Milestone enforcement
+  const desiredMilestone = inferMilestoneTitle(config, classification.track);
+  if (desiredMilestone) {
+    const milestoneNumber = await ensureMilestone(
+      repoRef,
+      desiredMilestone
+    );
+    await attachMilestoneToIssue(
+      repoRef,
+      issue.number,
+      milestoneNumber
+    );
+  }
+
+  // Telemetry
+  writeTelemetry(issue.number, {
+    version: 1,
+    event: "issue",
+    repository: repoRef,
+    issue: {
+      id: issue.id,
+      number: issue.number,
+      title: issue.title,
+      state: issue.state,
+      labels: (issue.labels || []).map((l: any) =>
+        typeof l === "string" ? l : l.name
+      ),
+      milestone: issue.milestone?.title ?? null,
+      created_at: issue.created_at,
+      updated_at: issue.updated_at
+    },
+    classification,
+    generated_at: new Date().toISOString()
+  });
+
+  return {
+    classification,
+    milestone: desiredMilestone
+  };
+}
