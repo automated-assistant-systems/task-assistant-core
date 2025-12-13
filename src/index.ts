@@ -1,7 +1,5 @@
 // src/index.ts
 
-import * as core from "@actions/core";
-import * as gha from "@actions/github";
 import { Octokit } from "@octokit/rest";
 import { getEnv } from "./env";
 import { logger } from "./logger";
@@ -268,15 +266,25 @@ export async function runCore(input: RunCoreInput) {
  * GitHub Action entrypoint.
  * This must ONLY run when invoked by GitHub Actions.
  */
-export function runAction() {
+export function runAction(deps: {
+  context: any;
+  getInput: (name: string) => string;
+  setOutput: (name: string, value: string) => void;
+  setFailed: (message: string) => void;
+}) {
   const env = getEnv();
 
   if (env.ORCHESTRATOR_RUN_MODE !== "action") {
-    logger.debug(
-      `Skipping runAction (mode=${env.ORCHESTRATOR_RUN_MODE})`
-    );
+    logger.debug("Skipping runAction (not in action mode)");
     return;
   }
 
-  run();
+  const { context, getInput, setOutput, setFailed } = deps;
+
+  run({
+    context,
+    getInput,
+    setOutput,
+    setFailed
+  });
 }
