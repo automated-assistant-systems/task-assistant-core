@@ -1,7 +1,7 @@
-# MindForge Orchestrator Core  
+# Automated Task Assistant Core  
 ### GitHub Action · Workflow Engine for Repo Automation
 
-`mindforge-orchestrator-core` is the execution engine behind the MindForge Orchestrator GitHub App.  
+`task-assistant-core` is the execution engine behind the Automated Task Assistant GitHub App.  
 It provides:
 
 - Issue classification (track labels)
@@ -10,7 +10,7 @@ It provides:
 - Telemetry event generation
 - File updates inside your repository
 
-This Action is designed to be consumed by Orchestrator workflows inside a repo.
+This Action is designed to be consumed by Automated Task Assistant inside a repo.
 
 ---
 
@@ -18,8 +18,8 @@ This Action is designed to be consumed by Orchestrator workflows inside a repo.
 
 ```yaml
 steps:
-  - name: Run Orchestrator Core
-    uses: garybayes/mindforge-orchestrator-core@v1
+  - name: Run Automated Task Assistant Core
+    uses: automated-assistant-systems/task-assistant-core@v1
     with:
       config-path: .github/orchestrator.yml
 📁 Repository Structure
