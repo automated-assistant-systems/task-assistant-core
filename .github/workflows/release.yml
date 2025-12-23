@@ -1,6 +1,6 @@
 ---
 # yamllint disable rule:truthy
-name: Release Orchestrator Core
+name: Release Task Assistant Core
 
 on:
   push:

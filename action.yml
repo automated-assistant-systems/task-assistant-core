@@ -1,8 +1,8 @@
 ---
-name: "Orchestrator Core"
+name: "Task Assistant Core"
 description: "Core engine for issue classification, milestone enforcement, stale detection, and telemetry writing."
 
-author: "MindForge / Codex"
+author: "Automated Assistant Systems"
 runs:
   using: "node20"
   main: "dist/action.js"

@@ -1,6 +1,6 @@
 ---
 # yamllint disable rule:truthy
-name: Build Orchestrator Core
+name: Build Task Assistant Core
 
 on:
   push:
