@@ -9,8 +9,8 @@ runs:
 
 inputs:
   config-path:
-    description: "Path to .github/orchestrator.yml"
-    default: ".github/orchestrator.yml"
+    description: "Path to .github/task-assistant.yml"
+    default: ".github/task-assistant.yml"
     required: false
 
   event-name:

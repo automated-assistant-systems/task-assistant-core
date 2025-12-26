@@ -1,6 +1,6 @@
 /**
  * githubClient.ts
- * GitHub API abstraction for orchestrator-core.
+ * GitHub API abstraction for task-assistant-core.
  *
  * Provides typed, error-safe helpers around Octokit.
  * No global state. No implicit auth. Fully injectable.

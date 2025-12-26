@@ -1,6 +1,6 @@
 /**
  * milestoneManager.ts
- * Milestone creation + attachment engine for orchestrator-core.
+ * Milestone creation + attachment engine for task-assistant-core.
  *
  * Provides safe, structured wrappers around GitHub milestone operations.
  */
@@ -11,7 +11,7 @@ import { github } from "./githubClient";
 import { logger } from "./logger";
 import {
   githubApiError,
-  OrchestratorError,
+  TaskAssistantError,
 } from "./errors";
 
 export interface RepoRef {
@@ -27,7 +27,7 @@ async function listMilestones(ref: RepoRef) {
   const token = env.GITHUB_TOKEN;
   const octokit = new Octokit({
     auth: token,
-    userAgent: "mindforge-orchestrator-core/1.0.0",
+    userAgent: "task-assistant-core/1.0.0",
   });
   logger.debug(`Listing milestones for ${ref.owner}/${ref.repo}`);
   try {

@@ -1,8 +1,8 @@
 /**
  * milestoneRules.ts
- * Track → Milestone logic for orchestrator-core.
+ * Track → Milestone logic for task-assistant-core.
  *
- * Given a track name (from issueClassifier) and orchestrator config,
+ * Given a track name (from issueClassifier) and task assistant config,
  * this module determines which milestone title should be used.
  */
 
@@ -12,13 +12,13 @@ export interface MilestoneRule {
   title: string;
 }
 
-export interface OrchestratorConfig {
+export interface TaskAssistantConfig {
   tracks?: Record<string, string[]>;
   milestones?: Record<string, MilestoneRule>;
 }
 
 export function inferMilestoneTitle(
-  config: OrchestratorConfig,
+  config: TaskAssistantConfig,
   track: string | null
 ): string | null {
   if (!track) {

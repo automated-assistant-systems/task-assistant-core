@@ -6,7 +6,7 @@
 import { logger } from "./logger";
 import { IssueClassification } from "./types";
 
-export interface OrchestratorConfig {
+export interface TaskAssistantConfig {
   tracks?: Record<string, string[]>;
 }
 
@@ -14,7 +14,7 @@ export interface OrchestratorConfig {
  * Classify an issue's track based on label patterns.
  */
 export function classifyIssue(
-  config: OrchestratorConfig,
+  config: TaskAssistantConfig,
   labels: string[]
 ): IssueClassification {
   const classification: IssueClassification = {

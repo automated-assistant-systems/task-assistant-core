@@ -1,16 +1,16 @@
 /**
  * telemetry.ts
- * Centralized telemetry writer for orchestrator-core.
+ * Centralized telemetry writer for task-assistant-core.
  *
  * Telemetry writes are non-blocking: failures are logged but NEVER
- * cause orchestrator-core to fail execution.
+ * cause task-assistant-core to fail execution.
  *
  * Directory structure (inside telemetry root):
  *
  *   <repo-name>/events/<issue>-<timestamp>.json
  *
  * TELEMETRY_ROOT is controlled by:
- *   ORCHESTRATOR_TELEMETRY_ROOT (default: "telemetry")
+ *   TASK_ASSISTANT_TELEMETRY_ROOT (default: "telemetry")
  */
 
 import fs from "fs";
@@ -51,7 +51,7 @@ export function writeTelemetry(
 ): string {
   try {
     const env = getEnv();
-    const root = env.ORCHESTRATOR_TELEMETRY_ROOT; // default: "telemetry"
+    const root = env.TASK_ASSISTANT_TELEMETRY_ROOT; // default: "telemetry"
 
     // Repo-name scoped directory (no owner-level nesting)
     const repoDir = path.join(root, payload.repository.repo);

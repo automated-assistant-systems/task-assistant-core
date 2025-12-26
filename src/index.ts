@@ -8,7 +8,7 @@ import { classifyIssue } from "./issueClassifier";
 import { inferMilestoneTitle } from "./milestoneRules";
 import { ensureMilestone, attachMilestoneToIssue } from "./milestoneManager";
 import { writeTelemetry } from "./telemetry";
-import { OrchestratorResult, TelemetryPayload } from "./types";
+import { TaskAssistantResult, TelemetryPayload } from "./types";
 import { github as ghClient } from "./githubClient";
 
 export async function run(deps: {
@@ -25,14 +25,14 @@ export async function run(deps: {
   const token = env.GITHUB_TOKEN;
   const octokit = new Octokit({
     auth: token,
-    userAgent: "mindforge-orchestrator-core/1.0.0",
+    userAgent: "task-assistant-core/1.0.0",
   });
   try {
-    logger.info("🚀 Orchestrator-core starting...");
-    logger.debug(`Run mode: ${env.ORCHESTRATOR_RUN_MODE}`);
+    logger.info("🚀 Task-Assistant-core starting...");
+    logger.debug(`Run mode: ${env.TASK_ASSISTANT_RUN_MODE}`);
 
     const configPath =
-      getInput?.("config-path") || ".github/orchestrator.yml";
+      getInput?.("config-path") || ".github/task-assistant.yml";
     const config = loadConfig(configPath);
 
     const issue = context?.payload?.issue;
@@ -125,7 +125,7 @@ export async function run(deps: {
     // 3. Telemetry
     const telemetryEnabled =
       (config.telemetry?.enabled ?? true) &&
-      env.ORCHESTRATOR_TELEMETRY_ENABLED;
+      env.TASK_ASSISTANT_TELEMETRY_ENABLED;
 
     let telemetryFile: string | null = null;
 
@@ -165,7 +165,7 @@ export async function run(deps: {
     }
 
     // 4. Summarize result for downstream workflows
-    const result: OrchestratorResult = {
+    const result: TaskAssistantResult = {
       track: classification.track,
       actions: classification.actions,
       milestone: finalMilestoneTitle,
@@ -173,14 +173,14 @@ export async function run(deps: {
     };
 
     setOutput?.("result", JSON.stringify(result));
-    logger.info("✅ Orchestrator-core completed successfully.");
+    logger.info("✅ Task Assistant-core completed successfully.");
   } catch (err: any) {
     logger.error(err);
 
     if (err instanceof Error) {
-      setFailed?.(`❌ Orchestrator error: ${err.message}`);
+      setFailed?.(`❌ Task Assistant error: ${err.message}`);
     } else {
-      setFailed?.("❌ Orchestrator error: unknown error");
+      setFailed?.("❌ Task Assistant error: unknown error");
     }
 
     process.exitCode = 1;
@@ -197,7 +197,7 @@ export interface RunCoreInput {
 export async function runCore(input: RunCoreInput) {
   const { owner, repo, issue, githubToken } = input;
 
-  const config = loadConfig(".github/orchestrator.yml");
+  const config = loadConfig(".github/task-assistant.yml");
 
   const labels = (issue.labels || []).map((l: any) =>
     typeof l === "string" ? l : l.name

@@ -1,14 +1,14 @@
 // src/config.ts
 //
-// Loads orchestrator.yml configuration, applies defaults,
+// Loads task-assistant.yml configuration, applies defaults,
 // and emits warnings for unknown or invalid fields.
-// Never throws — config errors must not break the orchestrator engine.
+// Never throws — config errors must not break the task assistant engine.
 
 import fs from "fs";
 import yaml from "js-yaml";
 import { logger } from "./logger";
 
-export interface OrchestratorConfig {
+export interface TaskAssistantConfig {
   tracks?: Record<string, string[]>;
   milestone_rules?: Record<string, string>;
   selfHealing?: {
@@ -95,10 +95,10 @@ function validateMilestoneRules(m: any): Record<string, string> | undefined {
   return out;
 }
 
-function validateSelfHealing(s: any): OrchestratorConfig["selfHealing"] {
+function validateSelfHealing(s: any): TaskAssistantConfig["selfHealing"] {
   if (!s) return {};
 
-  const out: OrchestratorConfig["selfHealing"] = {};
+  const out: TaskAssistantConfig["selfHealing"] = {};
 
   if (typeof s.enabled !== "boolean") {
     logger.warn("⚠️ self_healing.enabled should be boolean. Defaulting to false.");
@@ -122,8 +122,8 @@ function validateSelfHealing(s: any): OrchestratorConfig["selfHealing"] {
   return out;
 }
 
-function validateTelemetry(t: any): OrchestratorConfig["telemetry"] {
-  const out: OrchestratorConfig["telemetry"] = {};
+function validateTelemetry(t: any): TaskAssistantConfig["telemetry"] {
+  const out: TaskAssistantConfig["telemetry"] = {};
 
   if (!t) {
     // default telemetry ON
@@ -153,7 +153,7 @@ function validateTelemetry(t: any): OrchestratorConfig["telemetry"] {
  * Main config loader.
  * Always returns a config object — never throws.
  */
-export function loadConfig(path: string): OrchestratorConfig {
+export function loadConfig(path: string): TaskAssistantConfig {
   try {
     if (!fs.existsSync(path)) {
       logger.warn(`⚠️ Config file not found at ${path}. Using defaults.`);
@@ -176,7 +176,7 @@ export function loadConfig(path: string): OrchestratorConfig {
 
     warnUnknownKeys(normalized);
 
-    const config: OrchestratorConfig = {
+    const config: TaskAssistantConfig = {
       tracks: validateTracks(normalized.tracks),
       milestone_rules: validateMilestoneRules(normalized.milestone_rules),
       selfHealing: validateSelfHealing(normalized.self_healing),

@@ -1,7 +1,7 @@
 // src/types.ts
 
 /**
- * Shared types for orchestrator-core.
+ * Shared types for task-assistant-core.
  * These are used by the main engine, telemetry, and (later) the GitHub App.
  */
 
@@ -12,7 +12,7 @@ export interface IssueClassification {
   actions: string[];
 }
 
-export interface OrchestratorResult {
+export interface TaskAssistantResult {
   track: string | null;
   actions: string[];
   milestone: string | null;
@@ -36,7 +36,7 @@ export interface TelemetryIssueInfo {
 }
 
 /**
- * Canonical telemetry payload shape written by orchestrator-core.
+ * Canonical telemetry payload shape written by task-assistant-core.
  */
 export interface TelemetryPayload {
   version: number;

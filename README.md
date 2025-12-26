@@ -21,7 +21,7 @@ steps:
   - name: Run Automated Task Assistant Core
     uses: automated-assistant-systems/task-assistant-core@v1
     with:
-      config-path: .github/orchestrator.yml
+      config-path: .github/task-assistant.yml
 📁 Repository Structure
 src/
   index.ts

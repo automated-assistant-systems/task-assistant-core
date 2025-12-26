@@ -1,12 +1,12 @@
 /**
  * logger.ts
- * Structured logging for orchestrator-core.
+ * Structured logging for task-assistant-core.
  *
  * Produces GitHub-safe console output, supports verbosity flags,
- * and integrates with OrchestratorError.
+ * and integrates with TaskAssistantError.
  */
 
-import { OrchestratorError } from "./errors";
+import { TaskAssistantError } from "./errors";
 import { getEnv } from "./env";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
@@ -45,7 +45,7 @@ class Logger {
   }
 
   error(err: unknown): void {
-    if (err instanceof OrchestratorError) {
+    if (err instanceof TaskAssistantError) {
       console.error(
         this.format(
           "error",

@@ -1,25 +1,25 @@
 /**
  * env.ts
- * Centralized environment validation for orchestrator-core.
+ * Centralized environment validation for task-assistant-core.
  *
  * Validation is run lazily via getEnv().
- * Rules vary by ORCHESTRATOR_RUN_MODE.
+ * Rules vary by TASK_ASSISTANT_RUN_MODE.
  */
 
-export interface OrchestratorEnv {
+export interface TaskAssistantEnv {
   // GitHub auth (Action mode only)
   GITHUB_TOKEN?: string;
 
   // Runtime mode
-  ORCHESTRATOR_RUN_MODE: "action" | "app" | "local";
+  TASK_ASSISTANT_RUN_MODE: "action" | "app" | "local";
 
   // Telemetry
-  ORCHESTRATOR_TELEMETRY_ENABLED: boolean;
-  ORCHESTRATOR_TELEMETRY_ROOT: string;
+  TASK_ASSISTANT_TELEMETRY_ENABLED: boolean;
+  TASK_ASSISTANT_TELEMETRY_ROOT: string;
 
   // Optional JSON-based configuration
-  ORCHESTRATOR_TRACK_CONFIG?: Record<string, unknown>;
-  ORCHESTRATOR_MILESTONE_RULES?: Record<string, unknown>;
+  TASK_ASSISTANT_TRACK_CONFIG?: Record<string, unknown>;
+  TASK_ASSISTANT_MILESTONE_RULES?: Record<string, unknown>;
 
   // Node env
   NODE_ENV: "development" | "production" | "test";
@@ -29,18 +29,18 @@ export interface OrchestratorEnv {
  * Reads and validates all environment variables.
  * Throws descriptive errors if required variables are missing.
  */
-export function loadEnv(): OrchestratorEnv {
+export function loadEnv(): TaskAssistantEnv {
   const errors: string[] = [];
 
   // --- Run Mode ------------------------------------------------------------
 
-  const ORCHESTRATOR_RUN_MODE = (
-    process.env.ORCHESTRATOR_RUN_MODE ?? "action"
-  ) as OrchestratorEnv["ORCHESTRATOR_RUN_MODE"];
+  const TASK_ASSISTANT_RUN_MODE = (
+    process.env.TASK_ASSISTANT_RUN_MODE ?? "action"
+  ) as TaskAssistantEnv["TASK_ASSISTANT_RUN_MODE"];
 
-  if (!["action", "app", "local"].includes(ORCHESTRATOR_RUN_MODE)) {
+  if (!["action", "app", "local"].includes(TASK_ASSISTANT_RUN_MODE)) {
     errors.push(
-      `Invalid ORCHESTRATOR_RUN_MODE '${ORCHESTRATOR_RUN_MODE}'. ` +
+      `Invalid TASK_ASSISTANT_RUN_MODE '${TASK_ASSISTANT_RUN_MODE}'. ` +
         "Allowed values: action | app | local"
     );
   }
@@ -49,47 +49,47 @@ export function loadEnv(): OrchestratorEnv {
 
   const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
-  if (ORCHESTRATOR_RUN_MODE === "action" && !GITHUB_TOKEN) {
+  if (TASK_ASSISTANT_RUN_MODE === "action" && !GITHUB_TOKEN) {
     errors.push(
-      "Missing GITHUB_TOKEN. Required when ORCHESTRATOR_RUN_MODE=action."
+      "Missing GITHUB_TOKEN. Required when TASK_ASSISTANT_RUN_MODE=action."
     );
   }
 
   // --- Telemetry -----------------------------------------------------------
 
-  const ORCHESTRATOR_TELEMETRY_ENABLED =
-    (process.env.ORCHESTRATOR_TELEMETRY_ENABLED ?? "true").toLowerCase() ===
+  const TASK_ASSISTANT_TELEMETRY_ENABLED =
+    (process.env.TASK_ASSISTANT_TELEMETRY_ENABLED ?? "true").toLowerCase() ===
     "true";
 
-  const ORCHESTRATOR_TELEMETRY_ROOT =
-    process.env.ORCHESTRATOR_TELEMETRY_ROOT ?? "telemetry";
+  const TASK_ASSISTANT_TELEMETRY_ROOT =
+    process.env.TASK_ASSISTANT_TELEMETRY_ROOT ?? "telemetry";
 
   // --- Optional JSON Config ------------------------------------------------
 
-  let ORCHESTRATOR_TRACK_CONFIG: Record<string, unknown> | undefined;
+  let TASK_ASSISTANT_TRACK_CONFIG: Record<string, unknown> | undefined;
 
-  if (process.env.ORCHESTRATOR_TRACK_CONFIG) {
+  if (process.env.TASK_ASSISTANT_TRACK_CONFIG) {
     try {
-      ORCHESTRATOR_TRACK_CONFIG = JSON.parse(
-        process.env.ORCHESTRATOR_TRACK_CONFIG
+      TASK_ASSISTANT_TRACK_CONFIG = JSON.parse(
+        process.env.TASK_ASSISTANT_TRACK_CONFIG
       );
     } catch {
       errors.push(
-        "ORCHESTRATOR_TRACK_CONFIG is not valid JSON."
+        "TASK_ASSISTANT_TRACK_CONFIG is not valid JSON."
       );
     }
   }
 
-  let ORCHESTRATOR_MILESTONE_RULES: Record<string, unknown> | undefined;
+  let TASK_ASSISTANT_MILESTONE_RULES: Record<string, unknown> | undefined;
 
-  if (process.env.ORCHESTRATOR_MILESTONE_RULES) {
+  if (process.env.TASK_ASSISTANT_MILESTONE_RULES) {
     try {
-      ORCHESTRATOR_MILESTONE_RULES = JSON.parse(
-        process.env.ORCHESTRATOR_MILESTONE_RULES
+      TASK_ASSISTANT_MILESTONE_RULES = JSON.parse(
+        process.env.TASK_ASSISTANT_MILESTONE_RULES
       );
     } catch {
       errors.push(
-        "ORCHESTRATOR_MILESTONE_RULES is not valid JSON."
+        "TASK_ASSISTANT_MILESTONE_RULES is not valid JSON."
       );
     }
   }
@@ -97,7 +97,7 @@ export function loadEnv(): OrchestratorEnv {
   // --- Node Environment ----------------------------------------------------
 
   const NODE_ENV = (process.env.NODE_ENV ?? "production") as
-    OrchestratorEnv["NODE_ENV"];
+    TaskAssistantEnv["NODE_ENV"];
 
   if (!["production", "development", "test"].includes(NODE_ENV)) {
     errors.push(
@@ -118,24 +118,24 @@ export function loadEnv(): OrchestratorEnv {
 
   return {
     GITHUB_TOKEN,
-    ORCHESTRATOR_RUN_MODE,
-    ORCHESTRATOR_TELEMETRY_ENABLED,
-    ORCHESTRATOR_TELEMETRY_ROOT,
-    ORCHESTRATOR_TRACK_CONFIG,
-    ORCHESTRATOR_MILESTONE_RULES,
+    TASK_ASSISTANT_RUN_MODE,
+    TASK_ASSISTANT_TELEMETRY_ENABLED,
+    TASK_ASSISTANT_TELEMETRY_ROOT,
+    TASK_ASSISTANT_TRACK_CONFIG,
+    TASK_ASSISTANT_MILESTONE_RULES,
     NODE_ENV,
   };
 }
 
 // --------------------------------------------------------------------------
 
-let cachedEnv: OrchestratorEnv | null = null;
+let cachedEnv: TaskAssistantEnv | null = null;
 
 /**
  * Lazily loads and validates environment variables.
  * Safe for Action, App, and Local execution paths.
  */
-export function getEnv(): OrchestratorEnv {
+export function getEnv(): TaskAssistantEnv {
   if (!cachedEnv) {
     cachedEnv = loadEnv();
   }
